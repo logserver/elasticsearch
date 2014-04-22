@@ -316,20 +316,37 @@ public class LocalGatewayAllocator extends AbstractComponent implements GatewayA
                         assert primaryShard.active();
                         DiscoveryNode primaryNode = nodes.get(primaryShard.currentNodeId());
                         if (primaryNode != null) {
+			    if(primaryNode.getId() == shard.currentNodeId())
+                            {
+                                logger.info("you are looking at primary continue to next node..");
+                                continue;
+                            }
                             TransportNodesListShardStoreMetaData.StoreFilesMetaData primaryNodeStore = shardStores.get(primaryNode);
                             if (primaryNodeStore != null && primaryNodeStore.allocated()) {
                                 long sizeMatched = 0;
-
-                                for (StoreFileMetaData storeFileMetaData : storeFilesMetaData) {
-                                    if (primaryNodeStore.fileExists(storeFileMetaData.name()) && primaryNodeStore.file(storeFileMetaData.name()).isSame(storeFileMetaData)) {
+				for (StoreFileMetaData storeFileMetaData : storeFilesMetaData) {
+                                    logger.trace(storeFileMetaData.name() + " exists in "+ discoNode.name() + ". Check sum is " + storeFileMetaData.checksum());
+			            
+				    if(storeFileMetaData.name() != null && !storeFileMetaData.name().isEmpty())
+                                    {
+                                        changed = true;
+                                        logger.trace("assigning " + shard.shortSummary() + " to node " + node.nodeId() + " on replica allocation");
+                                        allocation.routingNodes().assign(shard, node.nodeId());
+                                        //unassignedIterator.remove();
+                                     }
+				    /*
+				    if (primaryNodeStore.fileExists(storeFileMetaData.name()) && primaryNodeStore.file(storeFileMetaData.name()).isSame(storeFileMetaData)) {
                                         sizeMatched += storeFileMetaData.length();
                                     }
+				    */
                                 }
+				/*
                                 if (sizeMatched > lastSizeMatched) {
                                     lastSizeMatched = sizeMatched;
                                     lastDiscoNodeMatched = discoNode;
                                     lastNodeMatched = node;
                                 }
+				*/
                             }
                         }
                     }
@@ -406,8 +423,13 @@ public class LocalGatewayAllocator extends AbstractComponent implements GatewayA
 
         for (TransportNodesListGatewayStartedShards.NodeLocalGatewayStartedShards nodeShardState : response) {
             // -1 version means it does not exists, which is what the API returns, and what we expect to
-            shardStates.put(nodeShardState.getNode(), nodeShardState.version());
-        }
+            logger.trace(shard.index() + "[" + shard.getId() +"] buildShardStates:" + nodeShardState.getNode().getName() + " version:" + nodeShardState.version() + " isPrimary:" + nodeShardState.isPrimary());
+	    
+	    if(nodeShardState.isPrimary())
+            {    
+		shardStates.put(nodeShardState.getNode(), nodeShardState.version());
+       	    }
+	}
         return shardStates;
     }
 

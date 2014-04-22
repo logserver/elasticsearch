@@ -100,14 +100,14 @@ public class ThreadPool extends AbstractComponent {
         super(settings);
 
         Map<String, Settings> groupSettings = settings.getGroups(THREADPOOL_GROUP);
-
+	logger.info("bulk queue size increased to 500");
         int availableProcessors = EsExecutors.boundedNumberOfProcessors(settings);
         int halfProcMaxAt5 = Math.min(((availableProcessors + 1) / 2), 5);
         int halfProcMaxAt10 = Math.min(((availableProcessors + 1) / 2), 10);
         defaultExecutorTypeSettings = ImmutableMap.<String, Settings>builder()
                 .put(Names.GENERIC, settingsBuilder().put("type", "cached").put("keep_alive", "30s").build())
                 .put(Names.INDEX, settingsBuilder().put("type", "fixed").put("size", availableProcessors).put("queue_size", 200).build())
-                .put(Names.BULK, settingsBuilder().put("type", "fixed").put("size", availableProcessors).put("queue_size", 50).build())
+                .put(Names.BULK, settingsBuilder().put("type", "fixed").put("size", availableProcessors).put("queue_size", 500).build())
                 .put(Names.GET, settingsBuilder().put("type", "fixed").put("size", availableProcessors).put("queue_size", 1000).build())
                 .put(Names.SEARCH, settingsBuilder().put("type", "fixed").put("size", availableProcessors * 3).put("queue_size", 1000).build())
                 .put(Names.SUGGEST, settingsBuilder().put("type", "fixed").put("size", availableProcessors).put("queue_size", 1000).build())
